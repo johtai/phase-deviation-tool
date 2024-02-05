@@ -7,6 +7,7 @@ from matplotlib.backends.backend_qtagg import \
 from matplotlib.backends.qt_compat import QtWidgets
 from matplotlib.figure import Figure
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QIcon
 from PyQt6 import uic
 
 class ApplicationWindow(QtWidgets.QMainWindow):
@@ -48,10 +49,12 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.update_canvas(self.A, self.B)
 
     def update_A(self, A):
-        self.update_canvas(A, self.B)
+        if (A < self.B):
+            self.update_canvas(A, self.B)
 
     def update_B(self, B):
-        self.update_canvas(self.A, B)
+        if (self.A < B):
+            self.update_canvas(self.A, B)
 
     def update_canvas(self, A, B):
         self.A = A
@@ -71,12 +74,17 @@ class ApplicationWindow(QtWidgets.QMainWindow):
     
         self.ax1.cla()
         self.ax1.plot(X, Y, 'bo', t1, f(t1), 'k')
+        self.ax1.title.set_text("Approximation")
         
         self.ax2.cla()
         self.ax2.plot(t2, f2(t2), 'ro')
         self.ax2.hlines(y = 0, xmin = A, xmax = B, color='black')
         self.ax2.axis((A, B, -10, 10))
+        self.ax2.title.set_text("Deviation")
 
+        self.ax2.grid(True)
+
+        self.static_canvas.figure.subplots_adjust(hspace=0.3)
         self.static_canvas.figure.canvas.draw_idle()
 
     def read_data(self, path):
@@ -125,6 +133,8 @@ if __name__ == "__main__":
         qapp = QtWidgets.QApplication(sys.argv)
 
     app = ApplicationWindow()
+    app.setWindowTitle("Phase Deviation Tool")
+    app.setWindowIcon(QIcon("ui/favicon.png"))
     app.show()
     app.activateWindow()
     app.raise_()
