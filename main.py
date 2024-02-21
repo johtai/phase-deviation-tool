@@ -6,48 +6,61 @@ from matplotlib.backends.backend_qtagg import \
     NavigationToolbar2QT as NavigationToolbar
 from matplotlib.backends.qt_compat import QtWidgets
 from matplotlib.figure import Figure
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QIcon
+from PyQt6.QtCore import Qt, QObject
+from PyQt6.QtGui import QIcon, QAction
 from PyQt6 import uic
 
 class ApplicationWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
-        # uic.loadUi('ui/main.ui', self)
+        self.resize(1000, 1000)
 
         self._main = QtWidgets.QWidget()
         self.setCentralWidget(self._main)
-        
-        layout = QtWidgets.QVBoxLayout(self._main)
 
-        path = 'input.txt'
-        
-        self.X, self.Y = self.read_data(path)
+        open_file_action = QAction("Open File", self)
+        open_file_action.triggered.connect(self.open_file)
+
+        toolbar = QtWidgets.QToolBar(self)
+        toolbar.setMovable(False)
+        toolbar.addAction(open_file_action)
+        self.addToolBar(toolbar)
+
+        self.layout = QtWidgets.QVBoxLayout(self._main) 
+
+    def open_file(self):
+        for i in reversed(range(self.layout.count())): 
+            self.layout.itemAt(i).widget().setParent(None)
+
+        dialog = QtWidgets.QFileDialog(self)
+        filename = dialog.getOpenFileName()[0]
+
+        self.X, self.Y = self.read_data(filename)
         self.A = int(self.X[0])
         self.B = int(self.X[-1])
 
         sliderA = QtWidgets.QSlider(Qt.Orientation.Horizontal, self)
-        sliderA.setMaximum(self.A)
+        sliderA.setMinimum(self.A)
         sliderA.setMaximum(self.B)
         sliderA.valueChanged[int].connect(self.update_A)
 
         sliderB = QtWidgets.QSlider(Qt.Orientation.Horizontal, self)
-        sliderB.setMaximum(self.A)
+        sliderB.setMinimum(self.A)
         sliderB.setMaximum(self.B)
         sliderB.setValue(self.B)
         sliderB.valueChanged[int].connect(self.update_B)
 
-        layout.addWidget(sliderA)
-        layout.addWidget(sliderB)
+        self.layout.addWidget(sliderB)
+        self.layout.addWidget(sliderA)
 
         self.static_canvas = FigureCanvas(Figure())
-        layout.addWidget(NavigationToolbar(self.static_canvas, self))
-        layout.addWidget(self.static_canvas)
+        self.layout.addWidget(NavigationToolbar(self.static_canvas, self))
+        self.layout.addWidget(self.static_canvas)
 
         (self.ax1, self.ax2) = self.static_canvas.figure.subplots(2, 1)
 
         self.update_canvas(self.A, self.B)
-
+    
     def update_A(self, A):
         if (A < self.B):
             self.update_canvas(A, self.B)
@@ -70,18 +83,18 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             return a * x + b
 
         def f2(x):
-            return f(x) - Y
+            return Y - f(x)
     
         self.ax1.cla()
-        self.ax1.plot(X, Y, 'bo', t1, f(t1), 'k')
         self.ax1.title.set_text("Approximation")
-        
+        self.ax1.plot(X, Y, 'bo', t1, f(t1), 'k')
+        self.ax1.grid(True)
+
         self.ax2.cla()
+        self.ax2.title.set_text("Deviation")
         self.ax2.plot(t2, f2(t2), 'ro')
         self.ax2.hlines(y = 0, xmin = A, xmax = B, color='black')
         self.ax2.axis((A, B, -10, 10))
-        self.ax2.title.set_text("Deviation")
-
         self.ax2.grid(True)
 
         self.static_canvas.figure.subplots_adjust(hspace=0.3)
