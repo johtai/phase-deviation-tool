@@ -9,6 +9,7 @@ from matplotlib.figure import Figure
 from PyQt6.QtCore import Qt, QObject
 from PyQt6.QtGui import QIcon, QAction
 from PyQt6 import uic
+from matplotlib.ticker import (MultipleLocator, AutoMinorLocator)
 
 class ApplicationWindow(QtWidgets.QMainWindow):
     def __init__(self):
@@ -26,7 +27,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         toolbar.addAction(open_file_action)
         self.addToolBar(toolbar)
 
-        self.layout = QtWidgets.QVBoxLayout(self._main) 
+        self.layout = QtWidgets.QVBoxLayout(self._main)
+        self.upper_layout = QtWidgets.QGridLayout(self._main) 
 
     def open_file(self):
         for i in reversed(range(self.layout.count())): 
@@ -39,19 +41,54 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self.A = int(self.X[0])
         self.B = int(self.X[-1])
 
-        sliderA = QtWidgets.QSlider(Qt.Orientation.Horizontal, self)
-        sliderA.setMinimum(self.A)
-        sliderA.setMaximum(self.B)
-        sliderA.valueChanged[int].connect(self.update_A)
+        self.sliderA = QtWidgets.QSlider(Qt.Orientation.Horizontal, self)
+        self.sliderA.setMinimum(self.A)
+        self.sliderA.setMaximum(self.B)
+        self.sliderA.valueChanged[int].connect(self.update_A)
 
-        sliderB = QtWidgets.QSlider(Qt.Orientation.Horizontal, self)
-        sliderB.setMinimum(self.A)
-        sliderB.setMaximum(self.B)
-        sliderB.setValue(self.B)
-        sliderB.valueChanged[int].connect(self.update_B)
+        self.sliderB = QtWidgets.QSlider(Qt.Orientation.Horizontal, self)
+        self.sliderB.setMinimum(self.A)
+        self.sliderB.setMaximum(self.B)
+        self.sliderB.setValue(self.B)
+        self.sliderB.valueChanged[int].connect(self.update_B)
 
-        self.layout.addWidget(sliderB)
-        self.layout.addWidget(sliderA)
+        '''self.lineeditA = QtWidgets.QLineEdit(self)
+        self.lineeditB = QtWidgets.QLineEdit(self)
+
+        self.lineeditB.setMaxLength(5)
+        self.lineeditA.setMaxLength(5)
+
+        self.lineeditA.setFixedWidth(50)
+        self.lineeditB.setFixedWidth(50)
+
+        self.lineeditA.setText(str(self.A))
+        self.lineeditB.setText(str(self.B))
+
+        self.lineeditA.textChanged[str].connect(self.update_sliderA)
+        self.lineeditB.textChanged[str].connect(self.update_sliderB)'''
+
+        labelB = QtWidgets.QLabel(self)
+        labelA = QtWidgets.QLabel(self)
+
+        labelB.setText("B:")
+        labelA.setText("A:")
+
+        self.label_value_B = QtWidgets.QLabel(self)
+        self.label_value_A = QtWidgets.QLabel(self)
+
+        self.label_value_B.setText(str(self.B / 10 ** 8)[:5])
+        self.label_value_A.setText(str(self.A / 10 ** 8)[:5])
+
+        self.upper_layout.addWidget(labelB, 0, 0)
+        self.upper_layout.addWidget(labelA, 1, 0)
+
+        self.upper_layout.addWidget(self.label_value_B, 0, 1)
+        self.upper_layout.addWidget(self.label_value_A, 1, 1)
+
+        self.upper_layout.addWidget(self.sliderB, 0, 2)
+        self.upper_layout.addWidget(self.sliderA, 1, 2)
+
+        self.layout.addLayout(self.upper_layout)
 
         self.static_canvas = FigureCanvas(Figure())
         self.layout.addWidget(NavigationToolbar(self.static_canvas, self))
@@ -60,13 +97,15 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         (self.ax1, self.ax2) = self.static_canvas.figure.subplots(2, 1)
 
         self.update_canvas(self.A, self.B)
-    
+
     def update_A(self, A):
         if (A < self.B):
+            self.label_value_A.setText(str(A / 10 ** 8)[:5])
             self.update_canvas(A, self.B)
 
     def update_B(self, B):
         if (self.A < B):
+            self.label_value_B.setText(str(B / 10 ** 8)[:5])
             self.update_canvas(self.A, B)
 
     def update_canvas(self, A, B):
